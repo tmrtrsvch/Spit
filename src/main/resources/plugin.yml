@@ -1,0 +1,8 @@
+name: Spit
+version: 1.0
+main: ch.tmrtrsv.spit.Spit
+api-version: 1.16
+authors: [ Тимур ]
+website: t.me/tmrtrsvch
+commands:
+  spit:
