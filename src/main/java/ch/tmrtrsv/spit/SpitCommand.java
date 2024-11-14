@@ -13,10 +13,15 @@ import org.bukkit.Sound;
 import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.UUID;
 
 public class SpitCommand implements CommandExecutor, TabCompleter {
 
+    private final HashMap<UUID, Long> cooldowns = new HashMap<>();
+
+    @Override
     public boolean onCommand(final CommandSender sender, final Command command, final String label, final String[] args) {
 
         if (!(sender instanceof Player)) {
@@ -26,6 +31,19 @@ public class SpitCommand implements CommandExecutor, TabCompleter {
 
         final Player player = (Player) sender;
         final FileConfiguration configuration = Spit.getInstance().getConfig();
+
+        if (!player.hasPermission("spit.cooldown.bypass")) {
+            long currentTime = System.currentTimeMillis();
+            long cooldownTime = configuration.getInt("settings.cooldown") * 1000L;
+            Long lastUsed = cooldowns.get(player.getUniqueId());
+
+            if (lastUsed != null && (currentTime - lastUsed) < cooldownTime) {
+                long remainingTime = (cooldownTime - (currentTime - lastUsed)) / 1000;
+                player.sendMessage(Utils.color(configuration.getString("messages.spit_cooldown").replace("%cooldown%", String.valueOf(remainingTime))));
+                return true;
+            }
+            cooldowns.put(player.getUniqueId(), currentTime);
+        }
 
         if (args.length != 0) {
             if (args[0].equalsIgnoreCase("reload")) {
@@ -45,7 +63,7 @@ public class SpitCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        if (!player.hasPermission("spit.spit")) {
+        if (!player.hasPermission("spit.use")) {
             player.sendMessage(Utils.color(configuration.getString("messages.no_permission")));
             return true;
         }
@@ -79,6 +97,7 @@ public class SpitCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
+    @Override
     public List<String> onTabComplete(final CommandSender sender, final Command command, final String alias, final String[] args) {
         if (args.length == 1) {
             final List<String> strings = new ArrayList<>();
